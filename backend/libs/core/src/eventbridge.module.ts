@@ -11,4 +11,4 @@ import { StorageModule } from './storage/storage.module';
   exports: [CoreService],
   imports: [EngineModule, WorkflowModule, ExecutorModule, QueueModule, StorageModule],
 })
-export class CoreModule { }
+export class EventbridgeModule { }
