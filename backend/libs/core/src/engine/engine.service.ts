@@ -21,7 +21,7 @@ export class EngineService {
 
         const run = await this.workflowRunRepository.create(name, payload);
 
-        await this.executorService.runWorkflow(workflow, payload);
+        await this.executorService.runWorkflow(workflow, payload, run.id);
 
         await this.workflowRunRepository.complete(run.id);
     }
