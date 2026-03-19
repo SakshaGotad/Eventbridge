@@ -4,4 +4,7 @@ import { QueueService } from './queue.service';
 @Module({
   providers: [QueueService]
 })
-export class QueueModule {}
+export class QueueModule {
+  Providers: [QueueService]
+  exports: [QueueService]
+}
