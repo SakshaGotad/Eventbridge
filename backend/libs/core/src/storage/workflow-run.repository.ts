@@ -20,6 +20,18 @@ export class WorkflowRunRepository {
     return result.rows[0];
   }
 
+  async markFailed(runId: string, stepId?: string) {
+
+  await this.db.query(
+    `
+    UPDATE eventbridge_step_runs
+    SET status = 'failed'
+    WHERE workflow_run_id = $1 AND step_id = $2
+    `,
+    [runId, stepId]
+  );
+
+}
   async complete(runId: string) {
 
     await this.db.query(
