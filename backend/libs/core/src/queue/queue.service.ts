@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { WorkflowJobData } from '../common/workflow-job.interface';
 @Injectable()
 export class QueueService {
   private queue: Queue;
@@ -17,8 +18,11 @@ export class QueueService {
     });
 
   }
-  async addWorkflowJob(data: any, p0: { workflowName: string; payload: any; }) {
-    await this.queue.add('run-workflow', data);
+   async addWorkflowJob(
+    data: WorkflowJobData,
+    options?: { delay?: number },
+  ) {
+    return this.queue.add('run-workflow', data, options);
   }
 }
 
