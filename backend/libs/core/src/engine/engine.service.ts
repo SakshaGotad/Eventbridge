@@ -3,13 +3,15 @@ import { WorkflowService } from '../workflow/workflow.service';
 import { ExecutorService } from '../executor/executor.service';
 import { WorkflowRunRepository } from '../storage/workflow-run.repository';
 import { QueueService } from '../queue/queue.service';
+import { StepRunRepository } from '../storage/step-run.repository';
 @Injectable()
 export class EngineService {
   constructor(
     private readonly workflowService: WorkflowService,
     private readonly executorService: ExecutorService,
     private readonly workflowRunRepository: WorkflowRunRepository,
-    private readonly queueService: QueueService
+    private readonly queueService: QueueService,  
+    private readonly stepRunRepository: StepRunRepository
   ) { }
 
   async startWorkflow(name: string, payload: any): Promise<void> {
@@ -68,6 +70,44 @@ export class EngineService {
       success: true,
       message: 'Event processed successfully',
       triggeredWorkflows: workflows.map((w) => w.name),
+    };
+  }
+
+  async retryWorkflow(runId: string) {
+    // 1️⃣ Get workflow run
+    const run = await this.workflowRunRepository.findById(runId);
+
+    if (!run) {
+      throw new NotFoundException(`Run ${runId} not found`);
+    }
+
+    // 2️⃣ Get failed step
+    const failedStep =
+      await this.stepRunRepository.getFailedStep(runId);
+
+    if (!failedStep) {
+      throw new BadRequestException(
+        `No failed step found for run ${runId}`,
+      );
+    }
+
+    // 3️⃣ Get step index
+    const stepIndex = this.workflowService.getStepIndex(
+      run.workflowName,
+      failedStep.stepId,
+    );
+
+    // 4️⃣ Requeue from failed step
+    await this.queueService.addWorkflowJob({
+      workflowName: run.workflowName,
+      payload: run.payload,
+      runId,
+      stepIndex,
+    });
+
+    return {
+      message: 'Workflow retry triggered',
+      resumedFromStep: failedStep.stepId,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, BadRequestException, Param } from '@nestjs/common';
 import { EngineService } from './engine.service';
 
 @Controller('events')
@@ -22,4 +22,9 @@ export class EngineController {
 
     return this.engineService.emitEvent(name, payload);
   }
+
+  @Post('workflows/:runId/retry')
+async retry(@Param('runId') runId: string) {
+  return this.engineService.retryWorkflow(runId);
+}
 }

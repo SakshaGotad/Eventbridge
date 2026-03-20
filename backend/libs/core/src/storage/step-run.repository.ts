@@ -8,7 +8,7 @@ export class StepRunRepository {
   async create(runId: string, stepId: string) {
     await this.db.query(
       `
-      INSERT INTO step_runs (workflow_run_id, step_id, status, attempts)
+      INSERT INTO eventbridge_step_runs (workflow_run_id, step_id, status, attempts)
       VALUES ($1, $2, $3)
       `,
       [runId, stepId, 'running', 0],
@@ -30,7 +30,7 @@ export class StepRunRepository {
     await this.db.query(
       `
     UPDATE eventbridge_step_runs
-    SET status = 'failed'
+    SET status = 'failed', updated_at= NOW()
     WHERE workflow_run_id = $1 AND step_id = $2
     `,
       [runId, stepId],
@@ -39,11 +39,27 @@ export class StepRunRepository {
   async complete(runId: string, stepId: string) {
     await this.db.query(
       `
-      UPDATE step_runs
-      SET status = 'completed'
+      UPDATE eventbridge_step_runs
+      SET status = 'completed', updated_at = NOW()
       WHERE workflow_run_id = $1 AND step_id = $2
       `,
       [runId, stepId],
     );
   }
+
+  async getFailedStep(runId: string) {
+  const result = await this.db.query(
+    `
+    SELECT step_id
+    FROM eventbridge_step_runs
+    WHERE workflow_run_id = $1
+      AND status = 'failed'
+    ORDER BY updated_at DESC
+    LIMIT 1
+    `,
+    [runId],
+  );
+
+  return result.rows[0] || null;
+}
 }
