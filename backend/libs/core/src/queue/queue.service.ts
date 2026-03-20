@@ -6,6 +6,10 @@ export class QueueService {
   private queue: Queue;
 
   constructor() {
+     if (!process.env.REDIS_URL) {
+      throw new Error('REDIS_URL is not defined');
+    }
+
     this.queue = new Queue('eventbridge-workflow', {
       connection: {
         url: process.env.REDIS_URL!,
@@ -13,7 +17,7 @@ export class QueueService {
     });
 
   }
-  async addWorkflowJob(data: any) {
+  async addWorkflowJob(data: any, p0: { workflowName: string; payload: any; }) {
     await this.queue.add('run-workflow', data);
   }
 }

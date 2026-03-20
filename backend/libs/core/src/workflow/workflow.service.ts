@@ -17,4 +17,9 @@ export class WorkflowService {
     return Array.from(this.workflows.values());
   }
 
+  getWorkflowsByEvent(event: string): WorkflowDefinition[] {
+  return Array.from(this.workflows.values()).filter(
+    (wf) => wf.trigger?.event === event
+  );
+}
 }

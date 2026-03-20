@@ -1,13 +1,15 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { WorkflowService } from '../workflow/workflow.service';
 import { ExecutorService } from '../executor/executor.service';
 import { WorkflowRunRepository } from '../storage/workflow-run.repository';
+import { QueueService } from '../queue/queue.service';
 @Injectable()
 export class EngineService {
   constructor(
     private readonly workflowService: WorkflowService,
     private readonly executorService: ExecutorService,
     private readonly workflowRunRepository: WorkflowRunRepository,
+    private readonly queueService: QueueService
   ) {}
 
   async startWorkflow(name: string, payload: any): Promise<void> {
@@ -35,4 +37,37 @@ export class EngineService {
 
     await this.workflowRunRepository.complete(run.id);
   }
+
+  async emitEvent(name: string, payload: any) {
+  // ✅ Validate input
+  if (!name) {
+    throw new BadRequestException('Event name is required');
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    throw new BadRequestException('Payload must be a valid object');
+  }
+
+  const workflows = this.workflowService.getWorkflowsByEvent(name);
+
+  // ✅ Proper error instead of message
+  if (!workflows.length) {
+    throw new NotFoundException(
+      `No workflows found for event: ${name}`
+    );
+  }
+
+  for (const wf of workflows) {
+    await this.queueService.addWorkflowJob('run-workflow', {
+      workflowName: wf.name,
+      payload,
+    });
+  }
+
+  return {
+    success: true,
+    message: 'Event processed successfully',
+    triggeredWorkflows: workflows.map((w) => w.name),
+  };
+}
 }
