@@ -2,7 +2,10 @@ export interface WorkflowStep {
   delay: any;
   id: string;
   handler: (payload: any) => Promise<any>;
-   retry?: number;
+    retry?: {
+    attempts: number;
+    backoff: number; // base delay in ms
+  };
 }
 
 export interface WorkflowDefinition {

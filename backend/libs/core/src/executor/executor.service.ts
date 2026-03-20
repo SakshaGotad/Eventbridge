@@ -23,53 +23,47 @@ export class ExecutorService {
       const step = workflow.steps[i];
 
       console.log(`Running step: ${step.id}`);
-      if (step.delay) {
-        await this.queueService.addWorkflowJob(
-          {
-            workflowName: workflow.name,
-            payload,
-            runId,
-            stepIndex: i + 1, // resume next step
-          },
-          {
-            delay: (step as any).delay,
-          },
-        );
 
-        return; // ⛔ STOP execution here
-      }
-      // 1️⃣ Create step run
       await this.stepRunRepository.create(runId, step.id);
+
+      const maxAttempts = step.retry?.attempts || 3;
+      const baseDelay = step.retry?.backoff || 1000;
 
       let success = false;
       let attempts = 0;
 
-      while (!success && attempts < MAX_RETRIES) {
+      while (!success && attempts < maxAttempts) {
         try {
-          // 2️⃣ Execute step
           attempts++;
 
           await this.stepRunRepository.incrementAttempts(runId, step.id);
 
           await step.handler(payload);
 
-          // 3️⃣ Mark complete
           await this.stepRunRepository.complete(runId, step.id);
 
           success = true;
 
         } catch (error) {
-
           console.error(`Step failed: ${step.id}`, error);
-          if (attempts >= MAX_RETRIES) {
 
+          if (attempts >= maxAttempts) {
             await this.stepRunRepository.markFailed(runId, step.id);
 
-            throw new Error(`Step ${step.id} failed after ${MAX_RETRIES} attempts`);
-
+            throw new Error(
+              `Step ${step.id} failed after ${maxAttempts} attempts`
+            );
           }
-        }
 
+          // 🔥 BACKOFF (IMPORTANT)
+          const delay = baseDelay * Math.pow(2, attempts);
+
+          console.log(
+            `Retrying step ${step.id} in ${delay} ms (attempt ${attempts})`
+          );
+
+          await new Promise((res) => setTimeout(res, delay));
+        }
       }
     }
 
