@@ -15,6 +15,19 @@ export class StepRunRepository {
     ); 
   }
 
+  async getStepsByRunId(runId: string) {
+  const result = await this.db.query(
+    `
+    SELECT step_id, status, attempts, updated_at
+    FROM eventbridge_step_runs
+    WHERE workflow_run_id = $1
+    ORDER BY updated_at ASC
+    `,
+    [runId],
+  );
+
+  return result.rows;
+}
   async incrementAttempts(runId: string, stepId: string) {
     await this.db.query(
       `

@@ -14,6 +14,30 @@ export class EngineService {
     private readonly stepRunRepository: StepRunRepository
   ) { }
 
+  async getAllRuns() {
+  return this.workflowRunRepository.findAll();
+}
+async getRun(runId: string) {
+  const run = await this.workflowRunRepository.findById(runId);
+
+  if (!run) {
+    throw new NotFoundException(`Run ${runId} not found`);
+  }
+
+  return run;
+}
+
+async getRunSteps(runId: string) {
+  const steps = await this.stepRunRepository.getStepsByRunId(runId);
+
+  if (!steps.length) {
+    throw new NotFoundException(
+      `No steps found for run ${runId}`,
+    );
+  }
+
+  return steps;
+}
   async startWorkflow(name: string, payload: any): Promise<void> {
     const workflow = this.workflowService.getWorkflow(name);
     if (!workflow) {

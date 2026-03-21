@@ -20,6 +20,15 @@ export class WorkflowRunRepository {
     return result.rows[0];
   }
 
+  async findAll() {
+  const result = await this.db.query(`
+    SELECT id, workflow_name, status, created_at
+    FROM eventbridge_workflow_runs
+    ORDER BY created_at DESC
+  `);
+
+  return result.rows;
+}
   async findById(runId: string) {
     const result = await this.db.query(
       `
@@ -57,5 +66,7 @@ export class WorkflowRunRepository {
     );
 
   }
+
+  
 
 }

@@ -1,5 +1,5 @@
 export interface WorkflowStep {
-  delay: any;
+  delay: number;
   id: string;
   handler: (payload: any) => Promise<any>;
     retry?: {
