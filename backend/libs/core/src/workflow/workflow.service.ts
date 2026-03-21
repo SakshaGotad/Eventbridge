@@ -17,4 +17,27 @@ export class WorkflowService {
     return Array.from(this.workflows.values());
   }
 
+  getWorkflowsByEvent(event: string): WorkflowDefinition[] {
+  return Array.from(this.workflows.values()).filter(
+    (wf) => wf.trigger?.event === event
+  );
+}
+
+getStepIndex(workflowName: string, stepId: string): number {
+  const workflow = this.getWorkflow(workflowName);
+
+  if (!workflow) {
+    throw new Error(`Workflow ${workflowName} not found`);
+  }
+
+  const index = workflow.steps.findIndex(
+    (step) => step.id === stepId
+  );
+
+  if (index === -1) {
+    throw new Error(`Step ${stepId} not found`);
+  }
+
+  return index;
+}
 }

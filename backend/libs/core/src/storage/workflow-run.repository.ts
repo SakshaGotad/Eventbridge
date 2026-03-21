@@ -20,6 +20,19 @@ export class WorkflowRunRepository {
     return result.rows[0];
   }
 
+  async findById(runId: string) {
+    const result = await this.db.query(
+      `
+      SELECT id, workflow_name AS "workflowName", status, payload, created_at, updated_at
+      FROM workflow_runs
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [runId]
+    );
+    return result.rows[0];
+  }
+
   async markFailed(runId: string, stepId?: string) {
 
   await this.db.query(

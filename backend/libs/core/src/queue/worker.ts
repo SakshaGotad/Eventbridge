@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import { ExecutorService } from '../executor/executor.service';
 import { WorkflowService } from '../workflow/workflow.service';
 import { WorkflowRunRepository } from '../storage/workflow-run.repository';
+import { NotFoundException } from '@nestjs/common';
 
 export function createWorker(
   executor: ExecutorService,
@@ -13,20 +14,20 @@ export function createWorker(
     'eventbridge-workflow',
     async (job) => {
 
-      const { workflowName, payload, runId } = job.data;
+      const { workflowName, payload, runId, stepIndex=0 } = job.data;
 
       console.log('Worker received job:', workflowName);
 
       const workflow = workflowService.getWorkflow(workflowName);
 
       if (!workflow) {
-        throw new Error(`Workflow ${workflowName} not found`);
+        throw new NotFoundException(`Workflow ${workflowName} not found`);
       }
 
       try {
-        await executor.runWorkflow(workflow, payload, runId);
+        await executor.runWorkflow(workflow, payload, runId, stepIndex);
 
-        await workflowRunRepo.complete(runId);
+        // await workflowRunRepo.complete(runId);
 
       } catch (error) {
 
@@ -35,7 +36,7 @@ export function createWorker(
         await workflowRunRepo.markFailed(runId);
 
         throw error;
-      }
+      } 
 
     },
     {
