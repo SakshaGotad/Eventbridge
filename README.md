@@ -167,15 +167,4 @@ export const sampleWorkflow = async (payload) => {
 
 MIT License
 
----
 
-## 💡 Inspiration
-
-* Zapier
-* AWS EventBridge
-
----
-
-## 👨‍💻 Author
-
-Built with ❤️ by Alex
