@@ -6,20 +6,29 @@ export class WorkflowRunRepository {
 
   constructor(private db: DatabaseService) {}
 
-  async create(workflowName: string, payload: any) {
+  async create(runId: string, workflowName: string, payload: any) {
 
     const result = await this.db.query(
       `
-      INSERT INTO workflow_runs (workflow_name, status, payload)
-      VALUES ($1, $2, $3)
+      INSERT INTO eventbridge_workflow_runs (id, workflow_name, status, payload)
+      VALUES ($1, $2, $3, $4)
       RETURNING *
       `,
-      [workflowName, 'running', payload]
+      [runId, workflowName, 'running', payload]
     );
 
     return result.rows[0];
   }
 
+  async findAll() {
+  const result = await this.db.query(`
+    SELECT id, workflow_name, status, created_at
+    FROM eventbridge_workflow_runs
+    ORDER BY created_at DESC
+  `);
+
+  return result.rows;
+}
   async findById(runId: string) {
     const result = await this.db.query(
       `
@@ -57,5 +66,7 @@ export class WorkflowRunRepository {
     );
 
   }
+
+  
 
 }
